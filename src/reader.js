@@ -1,5 +1,8 @@
 import request from 'request-promise-native';
 import tough from 'tough-cookie';
+import cheerio from 'cheerio';
+import url from 'url';
+import path from 'path';
 
 export default class SessionHH {
     /**
@@ -54,6 +57,53 @@ export default class SessionHH {
             })
             .then(() => {
                 this.logged = false;
+            })
+        ;
+    }
+
+    /**
+     * Récupère les informations demandée auprès de la ToF
+     * @param field
+     * @param page
+     */
+    fetchTowerOfFame(field, page) {
+        if ( !this.logged ) {
+            return Promise.reject();
+        }
+
+        return request({
+                method: 'POST',
+                uri: 'https://www.hentaiheroes.com/ajax.php',
+                jar: this.jar,
+                form: {
+                    class: 'TowerOfFame',
+                    action: 'leaderboard_change',
+                    place: 'global',
+                    page: page,
+                    ranking_field: field,
+                    ranking_type: 'alltime',
+                },
+                json: true,
+            })
+            .then(result => {
+                const $ = cheerio.load(`<div>${result.html.WW}</div>`);
+                const tower = {
+                    players: [],
+                    lastPage: parseInt($('a[lead_nav="last"]').attr('page_number'), 10),
+                };
+
+                $('.lead_table_view tr').each(function() {
+                    tower.players.push({
+                        id: parseInt($(this).attr('mid'), 10),
+                        rank: parseInt($(this).attr('rank'), 10),
+                        username: $(this).find('td:nth-child(2)').text().trim(),
+                        country: path.basename(url.parse($(this).find('img').attr('src')).pathname, '.png'),
+                        lvl: parseInt($(this).find('td:nth-child(3)').text().replace(/\D/g, ''), 10),
+                        value: parseInt($(this).find('td:nth-child(4)').text().replace(/\D/g, ''), 10),
+                    });
+                });
+
+                return tower;
             })
         ;
     }
