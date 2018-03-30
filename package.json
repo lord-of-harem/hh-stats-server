@@ -2,7 +2,7 @@
   "name": "stat-server",
   "version": "1.0.0",
   "description": "Harem Heroes stats server",
-  "main": "index.js",
+  "main": "src/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node dist/index.js"
@@ -14,10 +14,17 @@
   },
   "license": "GPL-3.0",
   "babel": {
-    "presets": ["env"]
+    "presets": [
+      "env"
+    ]
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
     "babel-preset-env": "^1.6.1"
+  },
+  "dependencies": {
+    "request": "^2.85.0",
+    "request-promise-native": "^1.0.5",
+    "tough-cookie": "^2.3.4"
   }
 }
