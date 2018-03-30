@@ -61,3 +61,6 @@ typings/
 
 # Idea editor
 .idea/
+
+# Compiled file
+dist/
