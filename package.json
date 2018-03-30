@@ -1,0 +1,15 @@
+{
+  "name": "stat-server",
+  "version": "1.0.0",
+  "description": "Harem Heroes stats server",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": "github:lord-of-harem/hh-stats-server",
+  "author": {
+    "name": "Lord of Harem",
+	"email": "lords.of.harem@gmail.com"
+  },
+  "license": "GPL-3.0"
+}
