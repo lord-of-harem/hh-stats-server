@@ -70,7 +70,6 @@ export default class SessionHH {
         return request({
                 method: 'POST',
                 uri: 'https://www.hentaiheroes.com/ajax.php',
-                //jar: this.jar,
                 form: {
                     class: 'TowerOfFame',
                     action: 'leaderboard_change',

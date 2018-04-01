@@ -2,10 +2,12 @@ import SessionHH from "./reader"
 import PromisePool from "es6-promise-pool";
 import PouchDB from "pouchdb";
 import mysql from "promise-mysql";
+import cliProgress from "cli-progress";
 
 const sess = new SessionHH();
-const db = new PouchDB('test_hh');
-let cnx;
+let db;
+let bar;
+let nbPages;
 const fields = [
     'victory_points',
     'pvp_wins',
@@ -19,7 +21,6 @@ const fields = [
 ];
 
 const now = new Date();
-const nowStr = Math.round(now.getTime() / 1000);
 const dateStat = [
     now.getFullYear(),
     now.getMonth() + 1,
@@ -28,97 +29,60 @@ const dateStat = [
     now.getMinutes(),
 ];
 
-mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: '',
-    database: 'hh_stat',
-}).then(con => cnx = con)
-/*sess
-    .login()*/
-    /*.then(() => {
-        function fetchPage(page) {
-            return Promise.all(fields.map(field => sess.fetchTowerOfFame(field, page)))
-                .then(pages => {
-                    const stat = {
-                        date: dateStat,
-                    };
-
-                    pages.forEach((page, index) => {
-                        stat[fields[index]] = page.players;
-                    });
-
-                    return db
-                        .post(stat)
-                        .then(() => console.log(new Date()))
-                        .then(() => pages)
-                    ;
-                })
-            ;
-        }
-
-        let nbPages;
-        let currentPage;
-
-        function fetchAll() {
-            if ( currentPage > nbPages ) {
-                return Promise.resolve();
-            }
-
-            return fetchPage(currentPage)
-                .then(() => currentPage++)
-                .then(() => fetchAll())
-            ;
-        }
-
-        return fetchPage(1).then(result => {
-            nbPages = result[0].lastPage;
-            currentPage = 2;
-
-            return fetchAll();
-        })
-    })*/
+Promise.resolve()
+    .then(() => console.time('total'))
+    .then(() => db = new PouchDB('http://localhost:5984/test_hh'))
+    .then(() => sess.fetchTowerOfFame(fields[0], 1))
+    .then(page => nbPages = page.lastPage)
     .then(() => {
-        console.time("total");
-        const generate = function* () {
+        bar = new cliProgress.Bar({}, cliProgress.Presets.legacy);
+        bar.start(nbPages * fields.length, 0);
+    })
+    .then(() => {
+        const poolRequest = new PromisePool(function*() {
             for ( let field of fields ) {
-                console.log(field);
-                for ( let i = 1; i < 8000; i++ ) {
-                    console.log(`${i}/8000`);
-
+                for ( let i = 1; i < nbPages; i++ ) {
                     yield sess.fetchTowerOfFame(field, i)
                         .then(page => {
-                            let value = '';
+                            const poolPage = new PromisePool(function*() {
+                                for ( let player of page.players ) {
+                                    function savePlayer() {
+                                        return db.get(player.id + '_' + dateStat.join('-'))
+                                            .catch(() => ({
+                                                _id: player.id + '_' + dateStat.join('-'),
+                                                username: player.username,
+                                                country: player.country,
+                                                lvl: player.lvl,
+                                                classement: {},
+                                            }))
+                                            .then(playerDb => {
+                                                playerDb.classement[field] = {
+                                                    rank: player.rank,
+                                                    value: player.value,
+                                                };
 
-                            page.players.forEach(player => {
-                                value += (value !== '' ? ', ' : '') + `(FROM_UNIXTIME(${nowStr}), 
-                                ${player.id}, 
-                                ${player.rank}, 
-                                ${cnx.escape(player.username)}, 
-                                '${player.country}', 
-                                ${player.lvl}, 
-                                ${player.value}, 
-                                '${fields[0]}')`;
-                            });
+                                                return db.put(playerDb);
+                                            })
+                                            .catch(() => savePlayer())
+                                        ;
+                                    }
 
-                            return cnx.query(`INSERT INTO
-                            history(date, id_player, rank, username, country, lvl, value, type) 
-                            VALUES ` + value).catch(console.error);
+                                    yield savePlayer();
+                                }
+                            }, 30);
+
+                            return poolPage.start();
                         })
+                        .then(() => bar.increment())
                     ;
                 }
             }
-        };
-        const iterator = generate();
+        }, 8);
 
-        const pool = new PromisePool(iterator, 8);
-
-        return pool.start();
+        return poolRequest.start();
     })
-    .then(() => {
-        cnx.end();
-    })
-    //.then(() => sess.logout())
+    .then(() => bar.stop())
     .then(() => console.log('ok'))
+    .then(() => console.timeEnd('total'))
     .catch(console.error)
 ;
