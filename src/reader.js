@@ -3,8 +3,15 @@ import tough from 'tough-cookie';
 import cheerio from 'cheerio';
 import url from 'url';
 import path from 'path';
+import PromisePool from 'es6-promise-pool';
 
-export default class SessionHH {
+const config = {
+    username:           process.env.npm_config_login_username || '',
+    password:           process.env.npm_config_login_password || '',
+    parallelRequests:   process.env.npm_config_parallel_requests || 8,
+};
+
+export class SessionHH {
     /**
      * Authentification sur HH
      */
@@ -18,8 +25,8 @@ export default class SessionHH {
                 uri: 'https://www.hentaiheroes.com/phoenix-ajax.php',
                 jar: this.jar,
                 form: {
-                    login: process.env.npm_config_login_username,
-                    password: process.env.npm_config_login_password,
+                    login: config.username,
+                    password: config.password,
                     stay_online: 1,
                     module: 'Member',
                     action: 'form_log_in',
@@ -114,4 +121,49 @@ export default class SessionHH {
             maxAge: 31536000,
         }), 'https://www.hentaiheroes.com');
     }
+}
+
+export const fields = [
+    'victory_points',
+    'pvp_wins',
+    'troll_wins',
+    'soft_currency',
+    'experience',
+    'girls_won',
+    'stats_upgrade',
+    'girls_affection',
+    'harem_level',
+];
+
+export function fetchAllStats(event) {
+    const session = new SessionHH();
+    let nbPages;
+
+    session.fetchTowerOfFame(fields[0], 1)
+        .then(page => nbPages = page.lastPage)
+        .then(() => event.emit('start', nbPages))
+        .then(() => {
+            const poolRequest = new PromisePool(function*() {
+                for ( let field of fields ) {
+                    for ( let i = 1; i <= nbPages; i++ ) {
+                        yield session.fetchTowerOfFame(field, i)
+                            .then(page => {
+                                event.emit('page');
+
+                                for ( let player of page.players ) {
+                                    event.emit('player', player, field);
+                                }
+                            })
+                        ;
+                    }
+                }
+            }, config.parallelRequests);
+
+            return poolRequest.start();
+        })
+        .catch(e => event.emit('error', e))
+        .then(() => event.emit('end'))
+    ;
+
+    return event;
 }

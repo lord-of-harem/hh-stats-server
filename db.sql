@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS `history` (
   `girls_won_value` smallint(5) UNSIGNED DEFAULT NULL,
   `stats_upgrade_rank` mediumint(8) UNSIGNED DEFAULT NULL,
   `stats_upgrade_value` smallint(5) UNSIGNED DEFAULT NULL,
-  `girls_affection_rank` smallint(5) UNSIGNED DEFAULT NULL,
+  `girls_affection_rank` mediumint(8) UNSIGNED DEFAULT NULL,
   `girls_affection_value` mediumint(8) UNSIGNED DEFAULT NULL,
   `harem_level_rank` mediumint(8) UNSIGNED DEFAULT NULL,
   `harem_level_value` smallint(5) UNSIGNED DEFAULT NULL,
