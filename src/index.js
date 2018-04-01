@@ -8,6 +8,8 @@ const sess = new SessionHH();
 let db;
 let bar;
 let nbPages;
+let cnx;
+let idView;
 const fields = [
     'victory_points',
     'pvp_wins',
@@ -20,17 +22,19 @@ const fields = [
     'harem_level',
 ];
 
-const now = new Date();
-const dateStat = [
-    now.getFullYear(),
-    now.getMonth() + 1,
-    now.getDate(),
-    now.getHours(),
-    now.getMinutes(),
-];
-
 Promise.resolve()
     .then(() => console.time('total'))
+    .then(() => mysql.createPool({
+        host: 'localhost',
+        user: 'root',
+        password: '',
+        database: 'test_hh',
+        connectionLimit: 30,
+        multipleStatements: true,
+    }))
+    .then(con => cnx = con)
+    .then(() => cnx.query('INSERT INTO views (date) VALUES(now())'))
+    .then(result => idView = result.insertId)
     .then(() => db = new PouchDB('http://localhost:5984/test_hh'))
     .then(() => sess.fetchTowerOfFame(fields[0], 1))
     .then(page => nbPages = page.lastPage)
@@ -46,28 +50,38 @@ Promise.resolve()
                         .then(page => {
                             const poolPage = new PromisePool(function*() {
                                 for ( let player of page.players ) {
-                                    function savePlayer() {
-                                        return db.get(player.id + '_' + dateStat.join('-'))
-                                            .catch(() => ({
-                                                _id: player.id + '_' + dateStat.join('-'),
-                                                username: player.username,
-                                                country: player.country,
-                                                lvl: player.lvl,
-                                                classement: {},
-                                            }))
-                                            .then(playerDb => {
-                                                playerDb.classement[field] = {
-                                                    rank: player.rank,
-                                                    value: player.value,
-                                                };
-
-                                                return db.put(playerDb);
-                                            })
-                                            .catch(() => savePlayer())
+                                    yield cnx.query(
+                                        `INSERT INTO 
+                                            players (
+                                                id_player, 
+                                                username, 
+                                                country
+                                            ) VALUES (
+                                                ${player.id},
+                                                ${cnx.escape(player.username)},
+                                                ${cnx.escape(player.country)}
+                                            ) ON DUPLICATE KEY UPDATE 
+                                                username = ${cnx.escape(player.username)},
+                                                country = ${cnx.escape(player.country)}
                                         ;
-                                    }
-
-                                    yield savePlayer();
+                                        INSERT INTO
+                                            history (
+                                                id_player,
+                                                id_view,
+                                                lvl,
+                                                ${field}_rank,
+                                                ${field}_value
+                                            ) VALUES (
+                                                ${player.id},
+                                                ${idView},
+                                                ${player.lvl},
+                                                ${player.rank},
+                                                ${player.value}
+                                            ) ON DUPLICATE KEY UPDATE 
+                                                ${field}_rank = ${player.rank},
+                                                ${field}_value = ${player.value}
+                                        ;`)
+                                    ;
                                 }
                             }, 30);
 
@@ -82,6 +96,7 @@ Promise.resolve()
         return poolRequest.start();
     })
     .then(() => bar.stop())
+    .then(() => cnx.end())
     .then(() => console.log('ok'))
     .then(() => console.timeEnd('total'))
     .catch(console.error)
