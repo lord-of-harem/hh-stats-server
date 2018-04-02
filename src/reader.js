@@ -8,7 +8,7 @@ import PromisePool from 'es6-promise-pool';
 const config = {
     username:           process.env.npm_config_login_username || '',
     password:           process.env.npm_config_login_password || '',
-    parallelRequests:   process.env.npm_config_parallel_requests || 8,
+    parallelRequests:   process.env.npm_config_parallel_requests || 3,
 };
 
 export class SessionHH {
@@ -135,27 +135,25 @@ export const fields = [
     'harem_level',
 ];
 
-export function fetchAllStats(event) {
+export function fetchAllStats(event, field) {
     const session = new SessionHH();
     let nbPages;
 
-    session.fetchTowerOfFame(fields[0], 1)
+    session.fetchTowerOfFame(field, 1)
         .then(page => nbPages = page.lastPage)
         .then(() => event.emit('start', nbPages))
         .then(() => {
             const poolRequest = new PromisePool(function*() {
-                for ( let field of fields ) {
-                    for ( let i = 1; i <= nbPages; i++ ) {
-                        yield session.fetchTowerOfFame(field, i)
-                            .then(page => {
-                                event.emit('page');
+                for ( let i = 1; i <= nbPages; i++ ) {
+                    yield session.fetchTowerOfFame(field, i)
+                        .then(page => {
+                            event.emit('page');
 
-                                for ( let player of page.players ) {
-                                    event.emit('player', player, field);
-                                }
-                            })
-                        ;
-                    }
+                            for ( let player of page.players ) {
+                                event.emit('player', player, field);
+                            }
+                        })
+                    ;
                 }
             }, config.parallelRequests);
 
