@@ -1,15 +1,22 @@
 import mysql from 'promise-mysql';
 
+const config = {
+    host:           process.env.npm_config_db_host || 'localhost',
+    user:           process.env.npm_config_db_user || 'root',
+    password:       process.env.npm_config_db_password || '',
+    database:       process.env.npm_config_db_database || 'hh_stat',
+};
+
 export function saveStats(event) {
     let cnx;
     let idView;
 
     return Promise.resolve()
         .then(() => mysql.createPool({
-            host: 'localhost',
-            user: 'root',
-            password: '',
-            database: 'test_hh',
+            host: config.host,
+            user: config.user,
+            password: config.password,
+            database: config.database,
             multipleStatements: true,
         }))
         .then(con => cnx = con)
