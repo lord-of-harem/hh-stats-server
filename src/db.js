@@ -7,10 +7,9 @@ const config = {
     database:       process.env.npm_config_db_database || 'hh_stat',
 };
 
-export function saveStats(event) {
-    let cnx;
-    let idView;
+let cnx, isOpen;
 
+export function open() {
     return Promise.resolve()
         .then(() => mysql.createPool({
             host: config.host,
@@ -20,6 +19,24 @@ export function saveStats(event) {
             multipleStatements: true,
         }))
         .then(con => cnx = con)
+        .then(() => isOpen = true)
+    ;
+}
+
+export function close() {
+    return Promise.resolve()
+        .then(() => cnx.end())
+        .then(() => isOpen = false);
+}
+
+export function saveStats(event) {
+    if ( !isOpen ) {
+        return Promise.reject();
+    }
+
+    let idView;
+
+    return Promise.resolve()
         .then(() => cnx.query('INSERT INTO views (date) VALUES(now())'))
         .then(result => idView = result.insertId)
         .then(() => event.emit('ready'))
@@ -62,7 +79,48 @@ export function saveStats(event) {
                 .on('end', () => setTimeout(() => resolve(), 2000))
             ;
         }))
-        .then(() => cnx.end())
     ;
 }
 
+export function getPlayerStat(playerId) {
+    if ( !isOpen ) {
+        return Promise.reject();
+    }
+
+    return cnx.query(`SELECT * FROM players WHERE id_player = ?; 
+            SELECT 
+                history.lvl,
+                history.victory_points_rank,
+                history.victory_points_value,
+                history.pvp_wins_rank,
+                history.pvp_wins_value,
+                history.troll_wins_rank,
+                history.troll_wins_value,
+                history.soft_currency_rank,
+                history.soft_currency_value,
+                history.experience_rank,
+                history.experience_value,
+                history.girls_won_rank,
+                history.girls_won_value,
+                history.stats_upgrade_rank,
+                history.stats_upgrade_value,
+                history.girls_affection_rank,
+                history.girls_affection_value,
+                history.harem_level_rank,
+                history.harem_level_value,
+                views.date
+            FROM 
+                history 
+            LEFT JOIN
+                views ON views.id = history.id_view
+            WHERE id_player = ?
+            ORDER BY views.date DESC
+            LIMIT 30`, [playerId, playerId])
+        .then(result => {
+            return {
+                player: result[0][0],
+                history: result[1],
+            };
+        })
+    ;
+}
