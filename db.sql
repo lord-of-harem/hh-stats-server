@@ -74,4 +74,97 @@ CREATE TABLE IF NOT EXISTS `views` (
   `date` datetime NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `delta_daily`
+--
+
+DROP TABLE IF EXISTS `delta_daily`;
+CREATE TABLE `delta_daily` (
+  `id_player` mediumint(8) UNSIGNED NOT NULL,
+  `lvl` smallint(5) UNSIGNED NOT NULL,
+  `victory_points_rank` mediumint(8) DEFAULT NULL,
+  `victory_points_value` int(11) DEFAULT NULL,
+  `pvp_wins_rank` mediumint(8) DEFAULT NULL,
+  `pvp_wins_value` smallint(5) UNSIGNED DEFAULT NULL,
+  `troll_wins_rank` mediumint(8) DEFAULT NULL,
+  `troll_wins_value` smallint(5) UNSIGNED DEFAULT NULL,
+  `soft_currency_rank` mediumint(8) DEFAULT NULL,
+  `soft_currency_value` int(10) UNSIGNED DEFAULT NULL,
+  `experience_rank` mediumint(8) DEFAULT NULL,
+  `experience_value` mediumint(8) UNSIGNED DEFAULT NULL,
+  `girls_won_rank` mediumint(8) DEFAULT NULL,
+  `girls_won_value` smallint(5) UNSIGNED DEFAULT NULL,
+  `stats_upgrade_rank` mediumint(8) DEFAULT NULL,
+  `stats_upgrade_value` smallint(5) UNSIGNED DEFAULT NULL,
+  `girls_affection_rank` mediumint(8) DEFAULT NULL,
+  `girls_affection_value` mediumint(8) UNSIGNED DEFAULT NULL,
+  `harem_level_rank` mediumint(8) DEFAULT NULL,
+  `harem_level_value` smallint(5) UNSIGNED DEFAULT NULL,
+  PRIMARY KEY (`id_player`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `delta_weekly`
+--
+
+DROP TABLE IF EXISTS `delta_weekly`;
+CREATE TABLE `delta_weekly` (
+  `id_player` mediumint(8) UNSIGNED NOT NULL,
+  `lvl` smallint(5) UNSIGNED NOT NULL,
+  `victory_points_rank` mediumint(8) DEFAULT NULL,
+  `victory_points_value` int(11) DEFAULT NULL,
+  `pvp_wins_rank` mediumint(8) DEFAULT NULL,
+  `pvp_wins_value` smallint(5) UNSIGNED DEFAULT NULL,
+  `troll_wins_rank` mediumint(8) DEFAULT NULL,
+  `troll_wins_value` smallint(5) UNSIGNED DEFAULT NULL,
+  `soft_currency_rank` mediumint(8) DEFAULT NULL,
+  `soft_currency_value` int(10) UNSIGNED DEFAULT NULL,
+  `experience_rank` mediumint(8) DEFAULT NULL,
+  `experience_value` mediumint(8) UNSIGNED DEFAULT NULL,
+  `girls_won_rank` mediumint(8) DEFAULT NULL,
+  `girls_won_value` smallint(5) UNSIGNED DEFAULT NULL,
+  `stats_upgrade_rank` mediumint(8) DEFAULT NULL,
+  `stats_upgrade_value` smallint(5) UNSIGNED DEFAULT NULL,
+  `girls_affection_rank` mediumint(8) DEFAULT NULL,
+  `girls_affection_value` mediumint(8) UNSIGNED DEFAULT NULL,
+  `harem_level_rank` mediumint(8) DEFAULT NULL,
+  `harem_level_value` smallint(5) UNSIGNED DEFAULT NULL,
+  PRIMARY KEY (`id_player`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `delta_monthly`
+--
+
+DROP TABLE IF EXISTS `delta_monthly`;
+CREATE TABLE `delta_monthly` (
+  `id_player` mediumint(8) UNSIGNED NOT NULL,
+  `lvl` smallint(5) UNSIGNED NOT NULL,
+  `victory_points_rank` mediumint(8) DEFAULT NULL,
+  `victory_points_value` int(11) DEFAULT NULL,
+  `pvp_wins_rank` mediumint(8) DEFAULT NULL,
+  `pvp_wins_value` smallint(5) UNSIGNED DEFAULT NULL,
+  `troll_wins_rank` mediumint(8) DEFAULT NULL,
+  `troll_wins_value` smallint(5) UNSIGNED DEFAULT NULL,
+  `soft_currency_rank` mediumint(8) DEFAULT NULL,
+  `soft_currency_value` int(10) UNSIGNED DEFAULT NULL,
+  `experience_rank` mediumint(8) DEFAULT NULL,
+  `experience_value` mediumint(8) UNSIGNED DEFAULT NULL,
+  `girls_won_rank` mediumint(8) DEFAULT NULL,
+  `girls_won_value` smallint(5) UNSIGNED DEFAULT NULL,
+  `stats_upgrade_rank` mediumint(8) DEFAULT NULL,
+  `stats_upgrade_value` smallint(5) UNSIGNED DEFAULT NULL,
+  `girls_affection_rank` mediumint(8) DEFAULT NULL,
+  `girls_affection_value` mediumint(8) UNSIGNED DEFAULT NULL,
+  `harem_level_rank` mediumint(8) DEFAULT NULL,
+  `harem_level_value` smallint(5) UNSIGNED DEFAULT NULL,
+  PRIMARY KEY (`id_player`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 COMMIT;

@@ -82,6 +82,109 @@ export function saveStats(event) {
     ;
 }
 
+function compileDeltaPeriod(period, periodStr) {
+    let idViewPast;
+    let idViewToday;
+
+    return Promise.resolve()
+        .then(() => cnx.query(`SELECT
+                id
+            FROM
+                views
+            WHERE
+                date = (SELECT MAX(date) FROM views)
+            ;
+            SELECT
+                id
+            FROM
+                views
+            WHERE 
+                date = (SELECT MIN(date) FROM views WHERE date >= NOW() - INTERVAL 1 ${periodStr})
+            ;`
+        ))
+        .then(result => {
+            idViewToday = result[0][0].id;
+            idViewPast = result[1][0].id;
+        })
+        .then(() => cnx.query(`TRUNCATE delta_daily;
+            INSERT INTO ${period} (
+                id_player,
+                lvl,
+                victory_points_rank,
+                victory_points_value,
+                pvp_wins_rank,
+                pvp_wins_value,
+                troll_wins_rank,
+                troll_wins_value,
+                soft_currency_rank,
+                soft_currency_value,
+                experience_rank,
+                experience_value,
+                girls_won_rank,
+                girls_won_value,
+                stats_upgrade_rank,
+                stats_upgrade_value,
+                girls_affection_rank,
+                girls_affection_value,
+                harem_level_rank,
+                harem_level_value
+            )
+            SELECT
+                today.id_player,
+                today.lvl - IFNULL(past.lvl, 0),
+                CAST(today.victory_points_rank AS SIGNED) - CAST(IFNULL(past.victory_points_rank, 0) AS SIGNED),
+                CAST(today.victory_points_value AS SIGNED) - CAST(IFNULL(past.victory_points_value, 0) AS SIGNED),
+                CAST(today.pvp_wins_rank AS SIGNED) - CAST(IFNULL(past.pvp_wins_rank, 0) AS SIGNED),
+                today.pvp_wins_value - IFNULL(past.pvp_wins_value, 0),
+                CAST(today.troll_wins_rank AS SIGNED) - CAST(IFNULL(past.troll_wins_rank, 0) AS SIGNED),
+                today.troll_wins_value - IFNULL(past.troll_wins_value, 0),
+                CAST(today.soft_currency_rank AS SIGNED) - CAST(IFNULL(past.soft_currency_rank, 0) AS SIGNED),
+                today.soft_currency_value - IFNULL(past.soft_currency_value, 0),
+                CAST(today.experience_rank AS SIGNED) - CAST(IFNULL(past.experience_rank, 0) AS SIGNED),
+                today.experience_value - IFNULL(past.experience_value, 0),
+                CAST(today.girls_won_rank AS SIGNED) - CAST(IFNULL(past.girls_won_rank, 0) AS SIGNED),
+                today.girls_won_value - IFNULL(past.girls_won_value, 0),
+                CAST(today.stats_upgrade_rank AS SIGNED) - CAST(IFNULL(past.stats_upgrade_rank, 0) AS SIGNED),
+                today.stats_upgrade_value - IFNULL(past.stats_upgrade_value, 0),
+                CAST(today.girls_affection_rank AS SIGNED) - CAST(IFNULL(past.girls_affection_rank, 0) AS SIGNED),
+                today.girls_affection_value - IFNULL(past.girls_affection_value, 0),
+                CAST(today.harem_level_rank AS SIGNED) - CAST(IFNULL(past.harem_level_rank, 0) AS SIGNED),
+                today.harem_level_value - IFNULL(past.harem_level_value, 0)
+            FROM
+                history AS today
+            LEFT JOIN
+                history AS past 
+            ON
+                past.id_player = today.id_player
+                AND past.id_view = ${idViewPast}
+            WHERE
+                today.id_view = ${idViewToday}
+            ;
+            DELETE FROM ${period} WHERE
+                lvl = 0
+                AND victory_points_value = 0
+                AND pvp_wins_value = 0
+                AND troll_wins_value = 0
+                AND soft_currency_value = 0
+                AND experience_value = 0
+                AND girls_won_value = 0
+                AND stats_upgrade_value = 0
+                AND girls_affection_value = 0
+                AND harem_level_value = 0
+            ;
+            OPTIMIZE TABLE ${period};`)
+        )
+    ;
+}
+
+export function compileStats() {
+    return Promise.all([
+        compileDeltaPeriod('delta_daily', 'DAY'),
+        compileDeltaPeriod('delta_weekly', 'WEEK'),
+        compileDeltaPeriod('delta_monthly', 'MONTH'),
+    ]);
+}
+
 export function getPlayerStat(playerId) {
     if ( !isOpen ) {
         return Promise.reject();

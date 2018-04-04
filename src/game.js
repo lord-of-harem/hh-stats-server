@@ -1,5 +1,5 @@
 import {fetchAllStats, fields} from './reader'
-import {saveStats} from './db'
+import {saveStats, compileStats} from './db'
 import {EventEmitter} from 'events';
 import cliProgress from 'cli-progress';
 import {CronJob} from 'cron';
@@ -15,7 +15,10 @@ new CronJob('0 15 4,16 * * *',
             .on('ready', () => fetchAllStats(e))
             .on('end', () => {
                 bar.stop();
-                console.log('finish');
+
+                compileStats()
+                    .then(() => console.log('finish'))
+                ;
             })
         ;
 
