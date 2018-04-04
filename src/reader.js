@@ -124,6 +124,13 @@ export class SessionHH {
     }
 }
 
+let resume, current;
+
+if ( true ) {
+    current = 0;
+    resume = 67180;
+}
+
 export function fetchAllStats(event) {
     const session = new SessionHH();
     let nbPages;
@@ -135,15 +142,22 @@ export function fetchAllStats(event) {
             const poolRequest = new PromisePool(function*() {
                 for ( let field of fields ) {
                     for ( let i = 1; i <= nbPages; i++ ) {
-                        yield session.fetchTowerOfFame(field, i)
-                            .then(page => {
-                                event.emit('page');
+                        if ( resume !== undefined && current < resume ) {
+                            current++;
+                            event.emit('page');
+                            yield Promise.resolve();
+                        }
+                        else {
+                            yield session.fetchTowerOfFame(field, i)
+                                .then(page => {
+                                    event.emit('page');
 
-                                for ( let player of page.players ) {
-                                    event.emit('player', player, field);
-                                }
-                            })
-                        ;
+                                    for (let player of page.players) {
+                                        event.emit('player', player, field);
+                                    }
+                                })
+                            ;
+                        }
                     }
                 }
             }, config.parallelRequests);
