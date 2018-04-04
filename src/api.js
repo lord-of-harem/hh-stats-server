@@ -1,5 +1,5 @@
 import express from 'express';
-import {getPlayerStat} from './db'
+import {getPlayerStat, getTop} from './db'
 
 const app = express();
 const api = express.Router();
@@ -14,10 +14,21 @@ api
             .catch(e => res.status(404).end())
         ;
     })
-    // TODO top du jour
-    // TODO top de la semaine
-    // TODO top du mois
-    // TODO -> d'accord sur quel classement ? on en a 9...
+    .get('/top/day', (req, res) => {
+        getTop('delta_daily', 'DAY')
+            .then(data => res.json(data))
+            .catch(e => res.status(500).end(JSON.stringify(e)))
+    })
+    .get('/top/week', (req, res) => {
+        getTop('delta_weekly', 'WEEK')
+            .then(data => res.json(data))
+            .catch(e => res.status(500).end(JSON.stringify(e)))
+    })
+    .get('/top/month', (req, res) => {
+        getTop('delta_monthly', 'MONTH')
+            .then(data => res.json(data))
+            .catch(e => res.status(500).end(JSON.stringify(e)))
+    })
 ;
 
 

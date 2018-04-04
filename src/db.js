@@ -1,4 +1,5 @@
 import mysql from 'promise-mysql';
+import {fields} from './global';
 
 const config = {
     host:           process.env.npm_config_db_host || 'localhost',
@@ -9,6 +10,10 @@ const config = {
 
 let cnx, isOpen;
 
+/**
+ * Ouvre la connexion de la base de données
+ * @returns {Promise.<boolean>}
+ */
 export function open() {
     return Promise.resolve()
         .then(() => mysql.createPool({
@@ -23,12 +28,21 @@ export function open() {
     ;
 }
 
+/**
+ * Terminal la connexion de la base de données
+ * @returns {Promise.<boolean>}
+ */
 export function close() {
     return Promise.resolve()
         .then(() => cnx.end())
         .then(() => isOpen = false);
 }
 
+/**
+ * Sauvegarde dans la base de données les statistiques des joueurs envoyés via l'evenement manager
+ * @param event
+ * @returns {*}
+ */
 export function saveStats(event) {
     if ( !isOpen ) {
         return Promise.reject();
@@ -82,12 +96,12 @@ export function saveStats(event) {
     ;
 }
 
-function compileDeltaPeriod(period, periodStr) {
-    let idViewPast;
-    let idViewToday;
-
-    return Promise.resolve()
-        .then(() => cnx.query(`SELECT
+/**
+ * Récupère l'identifiant des vues courante et passée pour une période donnée
+ * @param periodStr
+ */
+function getIdView(periodStr) {
+    return cnx.query(`SELECT
                 id
             FROM
                 views
@@ -101,11 +115,26 @@ function compileDeltaPeriod(period, periodStr) {
             WHERE 
                 date = (SELECT MIN(date) FROM views WHERE date >= NOW() - INTERVAL 1 ${periodStr})
             ;`
-        ))
-        .then(result => {
-            idViewToday = result[0][0].id;
-            idViewPast = result[1][0].id;
-        })
+        )
+        .then(result => ({
+            idViewToday: result[0][0].id,
+            idViewPast: result[1][0].id,
+        }))
+    ;
+}
+
+/**
+ * Execute les requêtes de compilation périodiques
+ * @param period
+ * @param periodStr
+ * @returns {Promise.<TResult>}
+ */
+function compileDeltaPeriod(period, periodStr) {
+    let idViewPast, idViewToday;
+
+    return Promise.resolve()
+        .then(() => getIdView(periodStr))
+        .then(result => ({idViewToday, idViewPast} = result))
         .then(() => cnx.query(`TRUNCATE ${period};
             INSERT INTO ${period} (
                 id_player,
@@ -177,6 +206,10 @@ function compileDeltaPeriod(period, periodStr) {
     ;
 }
 
+/**
+ * Compile les statistiques périodiques quotidienne, hebdomadaire et mensuelle
+ * @returns {Promise.<*[]>}
+ */
 export function compileStats() {
     return Promise.all([
         compileDeltaPeriod('delta_daily', 'DAY'),
@@ -185,6 +218,11 @@ export function compileStats() {
     ]);
 }
 
+/**
+ * Récupère les statistiques d'un joueur donné
+ * @param playerId
+ * @returns {Promise.<*>}
+ */
 export function getPlayerStat(playerId) {
     if ( !isOpen ) {
         return Promise.reject();
@@ -224,6 +262,71 @@ export function getPlayerStat(playerId) {
                 player: result[0][0],
                 history: result[1],
             };
+        })
+    ;
+}
+
+/**
+ * Récupère les meilleurs joueur d'une période
+ * @param period
+ */
+export function getTop(period, periodStr) {
+    return Promise.resolve()
+        .then(() => getIdView(periodStr))
+        .then(view => {
+            let query = '';
+
+            for ( let field of fields ) {
+                query += `SELECT 
+                    players.*,
+                    ${period}.${field}_value, 
+                    ${period}.${field}_rank,
+                    past.${field}_value AS past_${field}_value,
+                    past.${field}_rank AS past_${field}_rank,
+                    today.${field}_value AS today_${field}_value,
+                    today.${field}_rank AS today_${field}_rank
+                FROM 
+                    ${period} 
+                LEFT JOIN players
+                    ON players.id_player = ${period}.id_player
+                LEFT JOIN history AS past
+                    ON past.id_view = ${view.idViewPast}
+                    AND past.id_player = ${period}.id_player
+                LEFT JOIN history AS today
+                    ON today.id_view = ${view.idViewToday}
+                    AND today.id_player = ${period}.id_player
+                ORDER BY ${period}.${field}_value DESC 
+                LIMIT 1;\n`;
+            }
+
+            return cnx.query(query);
+        })
+        .then(result => {
+            let res = {};
+
+            fields.forEach((field, index) => {
+                res[field] = {
+                    player: {
+                        id_player: result[index][0].id_player,
+                        username: result[index][0].username,
+                        country: result[index][0].country,
+                    },
+                    delta: {
+                        value: result[index][0][field + '_value'],
+                        rank: result[index][0][field + '_rank'],
+                    },
+                    past: {
+                        value: result[index][0]['past_' + field + '_value'],
+                        rank: result[index][0]['past_' + field + '_rank'],
+                    },
+                    today: {
+                        value: result[index][0]['today_' + field + '_value'],
+                        rank: result[index][0]['today_' + field + '_rank'],
+                    },
+                };
+            });
+
+            return res
         })
     ;
 }

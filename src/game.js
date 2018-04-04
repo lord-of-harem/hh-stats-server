@@ -1,4 +1,5 @@
-import {fetchAllStats, fields} from './reader'
+import {fetchAllStats} from './reader'
+import {fields} from './global';
 import {saveStats, compileStats} from './db'
 import {EventEmitter} from 'events';
 import cliProgress from 'cli-progress';

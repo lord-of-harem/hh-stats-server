@@ -4,6 +4,7 @@ import cheerio from 'cheerio';
 import url from 'url';
 import path from 'path';
 import PromisePool from 'es6-promise-pool';
+import {fields} from './global';
 
 const config = {
     username:           process.env.npm_config_login_username || '',
@@ -122,18 +123,6 @@ export class SessionHH {
         }), 'https://www.hentaiheroes.com');
     }
 }
-
-export const fields = [
-    'victory_points',
-    'pvp_wins',
-    'troll_wins',
-    'soft_currency',
-    'experience',
-    'girls_won',
-    'stats_upgrade',
-    'girls_affection',
-    'harem_level',
-];
 
 export function fetchAllStats(event) {
     const session = new SessionHH();
