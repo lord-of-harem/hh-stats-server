@@ -106,7 +106,7 @@ function compileDeltaPeriod(period, periodStr) {
             idViewToday = result[0][0].id;
             idViewPast = result[1][0].id;
         })
-        .then(() => cnx.query(`TRUNCATE delta_daily;
+        .then(() => cnx.query(`TRUNCATE ${period};
             INSERT INTO ${period} (
                 id_player,
                 lvl,
@@ -132,23 +132,23 @@ function compileDeltaPeriod(period, periodStr) {
             SELECT
                 today.id_player,
                 today.lvl - IFNULL(past.lvl, 0),
-                CAST(today.victory_points_rank AS SIGNED) - CAST(IFNULL(past.victory_points_rank, 0) AS SIGNED),
+                CAST(past.victory_points_rank AS SIGNED) - CAST(today.victory_points_rank AS SIGNED),
                 CAST(today.victory_points_value AS SIGNED) - CAST(IFNULL(past.victory_points_value, 0) AS SIGNED),
-                CAST(today.pvp_wins_rank AS SIGNED) - CAST(IFNULL(past.pvp_wins_rank, 0) AS SIGNED),
+                CAST(past.pvp_wins_rank AS SIGNED) - CAST(today.pvp_wins_rank AS SIGNED),
                 today.pvp_wins_value - IFNULL(past.pvp_wins_value, 0),
-                CAST(today.troll_wins_rank AS SIGNED) - CAST(IFNULL(past.troll_wins_rank, 0) AS SIGNED),
+                CAST(past.troll_wins_rank AS SIGNED) - CAST(today.troll_wins_rank AS SIGNED),
                 today.troll_wins_value - IFNULL(past.troll_wins_value, 0),
-                CAST(today.soft_currency_rank AS SIGNED) - CAST(IFNULL(past.soft_currency_rank, 0) AS SIGNED),
+                CAST(past.soft_currency_rank AS SIGNED) - CAST(today.soft_currency_rank AS SIGNED),
                 today.soft_currency_value - IFNULL(past.soft_currency_value, 0),
-                CAST(today.experience_rank AS SIGNED) - CAST(IFNULL(past.experience_rank, 0) AS SIGNED),
+                CAST(past.experience_rank AS SIGNED) - CAST(today.experience_rank AS SIGNED),
                 today.experience_value - IFNULL(past.experience_value, 0),
-                CAST(today.girls_won_rank AS SIGNED) - CAST(IFNULL(past.girls_won_rank, 0) AS SIGNED),
+                CAST(past.girls_won_rank AS SIGNED) - CAST(today.girls_won_rank AS SIGNED),
                 today.girls_won_value - IFNULL(past.girls_won_value, 0),
-                CAST(today.stats_upgrade_rank AS SIGNED) - CAST(IFNULL(past.stats_upgrade_rank, 0) AS SIGNED),
+                CAST(past.stats_upgrade_rank AS SIGNED) - CAST(today.stats_upgrade_rank AS SIGNED),
                 today.stats_upgrade_value - IFNULL(past.stats_upgrade_value, 0),
-                CAST(today.girls_affection_rank AS SIGNED) - CAST(IFNULL(past.girls_affection_rank, 0) AS SIGNED),
+                CAST(past.girls_affection_rank AS SIGNED) - CAST(today.girls_affection_rank AS SIGNED),
                 today.girls_affection_value - IFNULL(past.girls_affection_value, 0),
-                CAST(today.harem_level_rank AS SIGNED) - CAST(IFNULL(past.harem_level_rank, 0) AS SIGNED),
+                CAST(past.harem_level_rank AS SIGNED) - CAST(today.harem_level_rank AS SIGNED),
                 today.harem_level_value - IFNULL(past.harem_level_value, 0)
             FROM
                 history AS today
