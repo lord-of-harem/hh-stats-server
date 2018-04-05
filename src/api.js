@@ -15,17 +15,17 @@ api
         ;
     })
     .get('/top/day', (req, res) => {
-        getTop('delta_daily', 'DAY')
+        getTop('day')
             .then(data => res.json(data))
             .catch(e => res.status(500).end(JSON.stringify(e)))
     })
     .get('/top/week', (req, res) => {
-        getTop('delta_weekly', 'WEEK')
+        getTop('week')
             .then(data => res.json(data))
             .catch(e => res.status(500).end(JSON.stringify(e)))
     })
     .get('/top/month', (req, res) => {
-        getTop('delta_monthly', 'MONTH')
+        getTop('month')
             .then(data => res.json(data))
             .catch(e => res.status(500).end(JSON.stringify(e)))
     })

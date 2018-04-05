@@ -129,7 +129,7 @@ function getIdView(periodStr) {
  * @param periodStr
  * @returns {Promise.<TResult>}
  */
-function compileDeltaPeriod(period, periodStr) {
+function buildDeltaPeriod(period, periodStr) {
     let idViewPast, idViewToday;
 
     let fieldsInsert = ``;
@@ -179,11 +179,11 @@ function compileDeltaPeriod(period, periodStr) {
  * Compile les statistiques périodiques quotidienne, hebdomadaire et mensuelle
  * @returns {Promise.<*[]>}
  */
-export function compileStats() {
+export function buildDelta() {
     return Promise.all([
-        compileDeltaPeriod('delta_daily', 'DAY'),
-        compileDeltaPeriod('delta_weekly', 'WEEK'),
-        compileDeltaPeriod('delta_monthly', 'MONTH'),
+        buildDeltaPeriod('delta_daily', 'DAY'),
+        buildDeltaPeriod('delta_weekly', 'WEEK'),
+        buildDeltaPeriod('delta_monthly', 'MONTH'),
     ]);
 }
 
@@ -225,10 +225,12 @@ export function getPlayerStat(playerId) {
 }
 
 /**
- * Récupère les meilleurs joueur d'une période
+ * Récupère le top auprès du delta complet de la période
  * @param period
+ * @param periodStr
+ * @returns {Promise.<TResult>}
  */
-export function getTop(period, periodStr) {
+function buildTop(period, periodStr) {
     return Promise.resolve()
         .then(() => getIdView(periodStr))
         .then(view => {
@@ -236,7 +238,9 @@ export function getTop(period, periodStr) {
 
             for ( let field of fields ) {
                 query += `SELECT 
-                    players.*,
+                    players.id_player,
+                    players.username,
+                    players.country,
                     ${period}.${field}_value, 
                     ${period}.${field}_rank,
                     past.${field}_value AS past_${field}_value,
@@ -286,5 +290,36 @@ export function getTop(period, periodStr) {
 
             return res
         })
+    ;
+}
+
+/**
+ * Construit une image des top dans la base de données
+ * @returns {Promise.<TResult>}
+ */
+export function buildTops() {
+    return Promise.all([
+            buildTop('delta_daily', 'DAY'),
+            buildTop('delta_weekly', 'WEEK'),
+            buildTop('delta_monthly', 'MONTH'),
+        ])
+        .then(top => cnx.query(`TRUNCATE top;
+            INSERT INTO top (period, data) VALUES
+                ('day', ${cnx.escape(JSON.stringify(top[0]))}),
+                ('week', ${cnx.escape(JSON.stringify(top[1]))}),
+                ('month', ${cnx.escape(JSON.stringify(top[2]))})
+            ;`
+        ))
+    ;
+}
+
+/**
+ * Récupère les meilleurs joueur d'une période
+ * @param period
+ */
+export function getTop(period) {
+    return Promise.resolve()
+        .then(() => cnx.query(`SELECT data FROM top WHERE period = ${cnx.escape(period)}`))
+        .then(result => JSON.parse(result[0].data))
     ;
 }

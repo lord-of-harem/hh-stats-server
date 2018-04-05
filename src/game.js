@@ -1,6 +1,6 @@
 import {fetchAllStats} from './reader'
 import {fields} from './global';
-import {saveStats, compileStats} from './db'
+import {saveStats, buildDelta, buildTops} from './db'
 import {EventEmitter} from 'events';
 import cliProgress from 'cli-progress';
 import {CronJob} from 'cron';
@@ -17,8 +17,10 @@ new CronJob('0 15 4,16 * * *',
             .on('end', () => {
                 bar.stop();
 
-                compileStats()
+                buildDelta()
+                    .then(() => buildTops())
                     .then(() => console.log('finish'))
+                    .catch(e => console.error(e))
                 ;
             })
         ;

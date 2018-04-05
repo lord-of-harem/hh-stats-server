@@ -167,4 +167,16 @@ CREATE TABLE `delta_monthly` (
   `harem_level_value` smallint(5) UNSIGNED DEFAULT NULL,
   PRIMARY KEY (`id_player`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `top`
+--
+
+CREATE TABLE `top` (
+  `period` enum('day','week','month') NOT NULL,
+  `data` json NOT NULL,
+  PRIMARY KEY (`period`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 COMMIT;
