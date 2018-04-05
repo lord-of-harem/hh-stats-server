@@ -410,7 +410,6 @@ CREATE PROCEDURE reduce_history()
 
           ELSE
             IF h_state = identical_start THEN
-              SELECT p_id_player, id_view_end;
               DELETE FROM history WHERE id_player = p_id_player AND id_view = id_view_end;
               SET identical_end := h_state;
               SET id_view_end := h_id_view;
