@@ -135,15 +135,23 @@ export function fetchAllStats(event) {
             const poolRequest = new PromisePool(function*() {
                 for ( let field of fields ) {
                     for ( let i = 1; i <= nbPages; i++ ) {
-                        yield session.fetchTowerOfFame(field, i)
-                            .then(page => {
-                                event.emit('page');
+                        function fetchPage() {
+                            return session.fetchTowerOfFame(field, i)
+                                .then(page => {
+                                    event.emit('page');
 
-                                for ( let player of page.players ) {
-                                    event.emit('player', player, field);
-                                }
-                            })
-                        ;
+                                    for ( let player of page.players ) {
+                                        event.emit('player', player, field);
+                                    }
+                                })
+                                .catch(e => {
+                                    console.error(e);
+                                    return fetchPage();
+                                })
+                            ;
+                        }
+
+                        yield fetchPage();
                     }
                 }
             }, config.parallelRequests);
