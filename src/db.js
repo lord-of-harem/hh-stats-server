@@ -140,7 +140,7 @@ function buildDeltaPeriod(period, periodStr) {
         fieldsInsert += `, ${field}_rank, ${field}_value`;
         fieldsSelect += `, CAST(past.${field}_rank AS SIGNED) - CAST(today.${field}_rank AS SIGNED),
                 CAST(today.${field}_value AS SIGNED) - CAST(IFNULL(past.${field}_value, 0) AS SIGNED)`;
-        fieldsDelete += ` AND ${field} = 0`;
+        fieldsDelete += ` AND ${field}_value = 0`;
     }
 
     return Promise.resolve()
