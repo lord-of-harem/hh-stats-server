@@ -1,5 +1,9 @@
 import './game';
 import './api';
-import {open} from './db'
+import {open, createReduceHistory} from './db'
 
-open();
+open()
+    .then(() => createReduceHistory())
+    .then(() => console.log('ready'))
+    .catch(e => console.error(e))
+;

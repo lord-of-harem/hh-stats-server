@@ -334,3 +334,107 @@ export function getTop(period) {
         .then(result => JSON.parse(result[0].data))
     ;
 }
+
+/**
+ * Créee la procédure stockée auprès de la base de données
+ * @returns {Promise.<TResult>}
+ */
+export function createReduceHistory() {
+    let stateQuery = '';
+
+    for ( let field of fields ) {
+        stateQuery += `, history.${field}_value`;
+    }
+
+    return Promise.resolve()
+        .then(() => cnx.query(`DROP PROCEDURE IF EXISTS reduce_history;
+CREATE PROCEDURE reduce_history()
+  BEGIN
+    DECLARE p_id_player INT;
+
+    DECLARE done_player INT DEFAULT TRUE;
+    DECLARE cur_player CURSOR FOR SELECT id_player FROM players WHERE players.id_player;
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done_player = FALSE;
+
+    OPEN cur_player;
+
+    loop_players: LOOP
+      FETCH cur_player INTO p_id_player;
+
+      IF NOT done_player THEN
+        LEAVE loop_players;
+      END IF;
+
+      BEGIN
+        DECLARE h_state VARCHAR(255);
+        DECLARE h_date DATETIME;
+        DECLARE h_id_view INT;
+        DECLARE identical_start, identical_end VARCHAR(255) DEFAULT NULL;
+        DECLARE id_view_end INT;
+
+        DECLARE done_history INT DEFAULT TRUE;
+        DECLARE cur_history CURSOR FOR
+          SELECT
+            CONCAT_WS(',' ${stateQuery}) AS state,
+            views.date,
+            views.id
+          FROM
+            history
+            LEFT JOIN views
+              ON views.id = history.id_view
+          WHERE
+            history.id_player = p_id_player
+          ORDER BY views.date ASC;
+        DECLARE CONTINUE HANDLER FOR NOT FOUND SET done_history = FALSE;
+
+        OPEN cur_history;
+
+        loop_history: LOOP
+          FETCH cur_history INTO h_state, h_date, h_id_view;
+
+          IF NOT done_history THEN
+            LEAVE loop_history;
+          END IF;
+
+          IF identical_start IS NULL THEN
+            SET identical_start := h_state;
+
+          ELSEIF identical_end IS NULL THEN
+            IF identical_start = h_state THEN
+              SET identical_end := h_state;
+              SET id_view_end := h_id_view;
+
+            ELSE
+              SET identical_start := h_state;
+            END IF;
+
+          ELSE
+            IF h_state = identical_start THEN
+              SELECT p_id_player, id_view_end;
+              DELETE FROM history WHERE id_player = p_id_player AND id_view = id_view_end;
+              SET identical_end := h_state;
+              SET id_view_end := h_id_view;
+
+            ELSE
+              SET identical_end := NULL;
+              SET identical_start := h_state;
+            END IF;
+          END IF;
+        END LOOP;
+
+      END;
+    END LOOP;
+
+    CLOSE cur_player;
+  END;`))
+    ;
+}
+
+/**
+ * Parcour l'historique de façon à ne concerver que les enregistrement représentant une variation
+ */
+export function reduceHistory() {
+    return Promise.resolve()
+        .then(() => cnx.query(`CALL reduce_history(); OPTIMIZE TABLE history;`))
+    ;
+}
