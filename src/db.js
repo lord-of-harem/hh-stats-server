@@ -100,16 +100,16 @@ export function saveStats(event) {
  * Récupère l'identifiant des vues courante et passée pour une période donnée
  * @param periodStr
  */
-function getIdView(periodStr) {
+function getView(periodStr) {
     return cnx.query(`SELECT
-                id
+                id, date
             FROM
                 views
             WHERE
                 date = (SELECT MAX(date) FROM views)
             ;
             SELECT
-                id
+                id, date
             FROM
                 views
             WHERE 
@@ -119,6 +119,8 @@ function getIdView(periodStr) {
         .then(result => ({
             idViewToday: result[0][0].id,
             idViewPast: result[1][0].id,
+            dateToday: result[0][0].date,
+            datePast: result[1][0].date,
         }))
     ;
 }
@@ -144,7 +146,7 @@ function buildDeltaPeriod(period, periodStr) {
     }
 
     return Promise.resolve()
-        .then(() => getIdView(periodStr))
+        .then(() => getView(periodStr))
         .then(result => ({idViewToday, idViewPast} = result))
         .then(() => cnx.query(`TRUNCATE ${period};
             INSERT INTO ${period} (
@@ -231,9 +233,12 @@ export function getPlayerStat(playerId) {
  * @returns {Promise.<TResult>}
  */
 function buildTop(period, periodStr) {
+    let view;
+
     return Promise.resolve()
-        .then(() => getIdView(periodStr))
-        .then(view => {
+        .then(() => getView(periodStr))
+        .then(result => view = result)
+        .then(() => {
             let query = '';
 
             for ( let field of fields ) {
@@ -264,7 +269,13 @@ function buildTop(period, periodStr) {
             return cnx.query(query);
         })
         .then(result => {
-            let res = {};
+            let res = {
+                date: {
+                    build: new Date(),
+                    today: view.dateToday,
+                    past: view.datePast,
+                },
+            };
 
             fields.forEach((field, index) => {
                 res[field] = {
