@@ -202,7 +202,7 @@ export function getPlayerStat(playerId) {
     let fieldsSelect = ``;
 
     for ( let field of fields ) {
-        fieldsSelect += `, history.${field}`;
+        fieldsSelect += `, history.${field}_value, history.${field}_rank`;
     }
 
     return cnx.query(`SELECT * FROM players WHERE id_player = ?; 
@@ -216,7 +216,7 @@ export function getPlayerStat(playerId) {
                 views ON views.id = history.id_view
             WHERE id_player = ?
             ORDER BY views.date DESC
-            LIMIT 30`, [playerId, playerId])
+            LIMIT 60`, [playerId, playerId])
         .then(result => {
             return {
                 player: result[0][0],
