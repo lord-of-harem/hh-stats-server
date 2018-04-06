@@ -160,7 +160,7 @@ function buildDeltaPeriod(period, periodStr) {
                 ${fieldsSelect}
             FROM
                 history AS today
-            LEFT JOIN
+            INNER JOIN
                 history AS past 
             ON
                 past.id_player = today.id_player
