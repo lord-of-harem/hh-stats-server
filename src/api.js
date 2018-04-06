@@ -1,8 +1,11 @@
 import express from 'express';
+import cors from 'cors';
 import {getPlayerStat, getTop} from './db'
 
 const app = express();
 const api = express.Router();
+
+app.use(cors());
 
 api
     .get('/', (req, res) => {
