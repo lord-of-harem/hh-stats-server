@@ -64,3 +64,5 @@ typings/
 
 # Compiled file
 dist/
+
+.harem.json

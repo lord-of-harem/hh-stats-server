@@ -5,6 +5,7 @@ import url from 'url';
 import path from 'path';
 import PromisePool from 'es6-promise-pool';
 import {fields} from './global';
+import {Script} from 'vm';
 
 const config = {
     username:           process.env.npm_config_login_username || '',
@@ -107,6 +108,42 @@ export class SessionHH {
                 });
 
                 return tower;
+            })
+        ;
+    }
+
+    /**
+     * Récupère le harem d'un joueur
+     * @param playerId
+     */
+    fetchHeroPage(playerId) {
+        return request({
+                method: 'POST',
+                uri: 'https://www.hentaiheroes.com/ajax.php',
+                form: {
+                    class: 'HeroPages',
+                    action: 'fetch',
+                    id: 'harem',
+                    preview: false,
+                    player_id: playerId,
+                    profile_fallback: true,
+                },
+                json: true,
+            })
+            .then(result => {
+                const $ = cheerio.load(`<div>${result.html}</div>`);
+                const hero = {};
+
+                if ( $('.harem_page').length === 0 ) {
+                    throw new Error('no harem');
+                }
+
+                const script = new Script($('script').get()[0].children[0].data);
+                script.runInNewContext(hero);
+
+                delete hero.girl_list.All.empty;
+
+                return hero;
             })
         ;
     }

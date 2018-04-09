@@ -179,4 +179,29 @@ CREATE TABLE `top` (
   `data` json NOT NULL,
   PRIMARY KEY (`period`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `drops`
+--
+
+CREATE TABLE `drops` (
+  `id_player` mediumint(8) UNSIGNED NOT NULL,
+  `id_girl` mediumint(8) UNSIGNED NOT NULL,
+  `date` datetime NOT NULL
+  PRIMARY KEY (`id_player`,`id_girl`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `girls`
+--
+
+CREATE TABLE `girls` (
+  `id_girl` mediumint(8) UNSIGNED NOT NULL,
+  `name` varchar(255) NOT NULL
+  PRIMARY KEY (`id_girl`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 COMMIT;

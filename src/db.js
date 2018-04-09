@@ -437,3 +437,49 @@ export function reduceHistory() {
         .then(() => cnx.query(`CALL reduce_history(); OPTIMIZE TABLE history;`))
     ;
 }
+
+/**
+ * Enregistre le harem d'un joueur
+ * @param harem
+ * @returns {Promise.<TResult>}
+ */
+export function saveHarem(harem) {
+    let girlQuery = '', dropQuery = '';
+
+    for ( let girl of harem ) {
+        girlQuery += (girlQuery !== '' ? ', ' : '') + `(${girl.id_girl}, ${cnx.escape(girl.name)})`;
+        dropQuery += (dropQuery !== '' ? ', ' : '') + `(
+            ${girl.id_member},
+            ${girl.id_girl},
+            ${cnx.escape(girl.date_added)}
+        )`;
+    }
+
+    return Promise.resolve()
+        .then(() => cnx.query(`INSERT INTO girls(
+                id_girl, 
+                name
+            ) VALUES ${girlQuery}
+            ON DUPLICATE KEY UPDATE
+                name = VALUES(name)
+            ;
+            INSERT INTO drops(
+                id_player,
+                id_girl,
+                date
+            ) VALUES ${dropQuery}
+            ON DUPLICATE KEY UPDATE
+                date = VALUES(date)
+            ;
+        `))
+    ;
+}
+
+export function fetchPlayerList(page) {
+    const offset = page * 10;
+
+    return Promise.resolve()
+        .then(() => cnx.query(`SELECT id_player FROM players ORDER BY id_player ASC LIMIT 10 OFFSET ${offset};`))
+        .then(result => result)
+    ;
+}
