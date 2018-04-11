@@ -22,6 +22,7 @@ export function open() {
             password: config.password,
             database: config.database,
             multipleStatements: true,
+            connectionLimit: 50,
         }))
         .then(con => cnx = con)
         .then(() => isOpen = true)
@@ -88,6 +89,7 @@ export function saveStats(event) {
                                 ${field}_rank = VALUES(${field}_rank),
                                 ${field}_value = VALUES(${field}_value)
                         ;`)
+                        .catch(console.error)
                     ;
                 })
                 .on('end', () => setTimeout(() => resolve(), 2000))
