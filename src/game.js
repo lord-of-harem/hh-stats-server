@@ -63,15 +63,7 @@ setTimeout(() => {
                     return players;
                 })
                 .then(players => players.filter(player => player !== undefined))
-                .then(players => players.map(player => {
-                    const harem = [];
-
-                    for ( let girl in player.girl_list.All ) {
-                        harem.push(player.girl_list.All[girl]);
-                    }
-
-                    return harem;
-                }))
+                .then(players => players.map(player => Object.values(player.girl_list.All)))
                 .then(players => Promise.all(players.map(player => saveHarem(player))))
                 .catch(console.error)
             ;
