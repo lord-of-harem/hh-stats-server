@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import {getPlayerStat, getTop} from './db'
+import {getPlayerStat, getTop, searchPlayer} from './db'
 
 const app = express();
 const api = express.Router();
@@ -10,6 +10,12 @@ app.use(cors());
 api
     .get('/', (req, res) => {
         res.json({hello: 'world'});
+    })
+    .get('/players/search/:query', (req, res) => {
+        searchPlayer(req.params.query)
+            .then(result => res.json(result))
+            .catch(e => res.status(500).end(JSON.stringify(e)))
+        ;
     })
     .get('/players/:id', (req, res) => {
         getPlayerStat(req.params.id)

@@ -439,3 +439,17 @@ export function reduceHistory() {
         .then(() => cnx.query(`CALL reduce_history(); OPTIMIZE TABLE history;`))
     ;
 }
+
+/**
+ * Recherche un utilisateur via son nom
+ * @param name
+ */
+export function searchPlayer(name) {
+    return cnx.query(`SELECT 
+        id_player, 
+        username
+    FROM 
+        players 
+    WHERE 
+        username LIKE ${cnx.escape(name + '%')}`);
+}
