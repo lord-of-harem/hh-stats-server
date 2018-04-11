@@ -103,27 +103,37 @@ export function saveStats(event) {
  * @param periodStr
  */
 function getView(periodStr) {
+    const views = {};
+
     return cnx.query(`SELECT
                 id, date
             FROM
                 views
             WHERE
                 date = (SELECT MAX(date) FROM views)
-            ;
-            SELECT
-                id, date
-            FROM
-                views
-            WHERE 
-                date = (SELECT MIN(date) FROM views WHERE date >= NOW() - INTERVAL 1 ${periodStr})
             ;`
         )
-        .then(result => ({
-            idViewToday: result[0][0].id,
-            idViewPast: result[1][0].id,
-            dateToday: result[0][0].date,
-            datePast: result[1][0].date,
-        }))
+        .then(result => {
+            views.idViewToday = result[0].id;
+            views.dateToday = result[0].date;
+
+            return cnx.query(`SELECT
+                    id, date
+                FROM
+                    views
+                WHERE 
+                    date = (SELECT MIN(date) FROM views WHERE date >= DATE_SUB((
+                        SELECT date FROM views WHERE id = ${views.idViewToday}
+                    ), INTERVAL 1 ${periodStr}))
+                ;`
+            );
+        })
+        .then(result => {
+            views.idViewPast = result[0].id;
+            views.datePast = result[0].date;
+
+            return views;
+        })
     ;
 }
 
