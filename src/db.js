@@ -451,5 +451,6 @@ export function searchPlayer(name) {
     FROM 
         players 
     WHERE 
-        username LIKE ${cnx.escape(name + '%')}`);
+        username LIKE ${cnx.escape(name + '%')}
+    LIMIT 50`);
 }
